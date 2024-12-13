@@ -1,0 +1,13 @@
+[
+    {
+        "field_name_1": "",
+        "reasoning": "short reasoning of chosen value",
+        "value": "chosen value"
+    },
+    {
+        "field_name_2": "",
+        "reasoning": "short reasoning of chosen value",
+        "value": "chosen value"
+    },
+    // 
+]

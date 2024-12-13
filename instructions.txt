@@ -1,0 +1,31 @@
+You will be given a set of filed descriptions, each containing a field name, a description of what to do, and a datatype (number or text). Your task is to generate appropriate values for each field based on the given descriptions.
+
+Here are the field descriptions:
+<field_descriptions>
+{{FIELD_DESCRIPTIONS}}
+</field_descriptions>
+
+Process each field description and generate a value that adheres to the description and datatype. For each field, provide a short reasoning explaining why you chose that particular value.
+
+Guidelines for generating values and reasoning:
+1. Carefully read and understand the description for each field.
+2. Ensure the generated value matches the specified datatype (number or text).
+3. Closely follow the instructions provided in the description.
+6. Provide a brief but clear reasoning for each generated value.
+
+Provide your output as a JSON array of objects. Each object should contain the field name, reasoning, and generated value. Here's an example of the structure:
+
+[
+  {
+    "field_name": "example_field",
+    "reasoning": "Brief explanation of why this value was chosen",
+    "value": 42
+  },
+  // Additional fields...
+]
+
+Important: Your final output should contain only the JSON array, without any additional text or explanations outside of the JSON structure.
+
+Remember to adhere strictly to the specified datatype (number or text) for each field, and ensure that your generated values and reasoning align closely with the provided descriptions.
+
+Provide the json response within <json_response> tags.
