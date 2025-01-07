@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import json
 from src.utils.llm_util import apply_transformation, apply_test_transformation, estimate_cost
+import anthropic
 
 class Field:
     def __init__(self, name, instructions, field_type):
@@ -92,20 +93,34 @@ if uploaded_file is not None:
         st.divider()
         st.subheader("Start with TableTalk")
 
-        # API Key input
-        api_key = st.text_input(
-            "Enter your Anthropic API Key - [Get API Key](https://console.anthropic.com/)",
-            type="password",
-            value=st.session_state.get("api_key", ""),
-            help="""This application uses Anthropic's LLMs to transform your data. 
-            You'll need an Anthropic API key. To get one, go to [console.anthropic.com](https://console.anthropic.com/)
-            and create an account. Then, navigate to API Keys section and create a new API key.
-            """
+        # API Key input and validation
+        col1, col2 = st.columns([6, 1])
+
+        with col1:
+            api_key = st.text_input(
+                "Enter your Anthropic API Key - [Get API Key](https://console.anthropic.com/)",
+                type="password",
+                help="""This application uses Anthropic's LLMs to transform your data. 
+                You'll need an Anthropic API key. To get one, go to [console.anthropic.com](https://console.anthropic.com/)
+                and create an account. Then, navigate to API Keys section and create a new API key.
+                """
             )
-            
+
+        with col2:
+            if api_key:
+                try:
+                    client = anthropic.Anthropic(api_key=api_key)
+                    client.models.list()
+                    st.markdown("<div style='margin-top: 34px;'></div>", unsafe_allow_html=True)
+                    st.write(":material/check_circle: Valid!")
+                    
+                except Exception:
+                    st.markdown("<div style='margin-top: 34px;'></div>", unsafe_allow_html=True)
+                    st.write(":material/error: Not valid!")
+                    
         if api_key:
             st.session_state["api_key"] = api_key
-        
+
         # Display columns in expanders
         if "new_columns" not in st.session_state:
             st.session_state.new_columns = []
@@ -172,6 +187,16 @@ if uploaded_file is not None:
 
         col1, col2, _ = st.columns([1, 1, 1])
         with col1:
+            # Check if API key is valid
+            api_key_valid = False
+            if api_key:
+                try:
+                    client = anthropic.Anthropic(api_key=api_key)
+                    client.models.list()
+                    api_key_valid = True
+                except Exception:
+                    api_key_valid = False
+
             apply_transformations_button = st.button(
                 "Apply Transformations", 
                 type="primary",
@@ -180,7 +205,7 @@ if uploaded_file is not None:
                 disabled=not st.session_state.new_columns or not all(
                     col.name and col.instructions 
                     for col in st.session_state.new_columns
-                ) or not st.session_state.get("api_key")
+                ) or not api_key_valid
             )
 
         with col2:
