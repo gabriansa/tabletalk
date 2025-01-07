@@ -2,15 +2,12 @@ import json
 import anthropic
 import litellm
 from litellm import completion
-import requests
 import random
 from copy import deepcopy
 from anthropic.types.messages.batch_create_params import Request
 from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
-from dotenv import load_dotenv
 import pandas as pd
 
-load_dotenv()
 
 def _prepare_batch_requests(df, field_descriptions):
     """Generate the batch of requests"""
@@ -151,7 +148,7 @@ def get_new_columns(response_text):
     except Exception as e:
         return None
 
-def apply_test_transformation(df, field_descriptions, max_retries=3):
+def apply_test_transformation(df, field_descriptions, api_key, max_retries=3):
     """Apply the transformation to a random row from the dataset"""
     # Select a random row
     random_row = df.sample(n=1)
@@ -168,6 +165,7 @@ def apply_test_transformation(df, field_descriptions, max_retries=3):
         try:    
             response = completion(
                 model="groq/llama-3.3-70b-versatile",
+                api_key=api_key,
                 messages=messages,
             )
             response_text = response.choices[0].message.content

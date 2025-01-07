@@ -221,7 +221,7 @@ if uploaded_file is not None:
                 ]
 
                 # Apply test transformation
-                result, instructions = apply_test_transformation(df, field_descriptions)
+                result, instructions = apply_test_transformation(df, field_descriptions, st.secrets["api_key"])
 
                 # Display the result as a table - the result is a row of the dataframe (a pandas row)
                 # Display the instructions
