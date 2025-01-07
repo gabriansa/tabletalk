@@ -15,6 +15,7 @@ Guidelines for generating values and reasoning:
 
 Provide your output as a JSON array of objects. Each object should contain the field name, reasoning, and generated value. Here's an example of the structure:
 
+```json
 [
   {
     "field_name": "example_field",
@@ -23,9 +24,11 @@ Provide your output as a JSON array of objects. Each object should contain the f
   },
   // Additional fields...
 ]
+```
 
 Important: Your final output should contain only the JSON array, without any additional text or explanations outside of the JSON structure.
 
 Remember to adhere strictly to the specified datatype (number or text) for each field, and ensure that your generated values and reasoning align closely with the provided descriptions.
 
-Provide the json response within <json_response> tags.
+Provide the the response between ```json and ``` tags.
+
