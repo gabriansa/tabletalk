@@ -221,7 +221,7 @@ if uploaded_file is not None:
                 ]
 
                 # Apply test transformation
-                result, instructions = apply_test_transformation(df, field_descriptions, st.secrets["api_key"])
+                result, instructions = apply_test_transformation(df, field_descriptions, st.secrets["GROQ_API_KEY"])
 
                 # Display the result as a table - the result is a row of the dataframe (a pandas row)
                 # Display the instructions
