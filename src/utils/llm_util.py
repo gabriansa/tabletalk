@@ -175,11 +175,12 @@ def apply_test_transformation(df, field_descriptions, api_key, max_retries=3):
                 raise ValueError("Failed to parse response JSON")
 
             # Get the row based on the custom_id
-            row = df[df.index == int(batch_requests[0]['custom_id'])]
+            row_idx = int(batch_requests[0]['custom_id'])
+            row = df.loc[[row_idx]].copy()  # Create an explicit copy
 
             # Add the new columns to the row
             for new_column in new_columns:
-                row[new_column['field_name']] = new_column['value']
+                row.loc[:, new_column['field_name']] = new_column['value']
 
             # get the instructions for the transformation
             # Create a deep copy of field_descriptions to avoid modifying the original
@@ -203,8 +204,6 @@ def apply_test_transformation(df, field_descriptions, api_key, max_retries=3):
                     # add a row like this -> col_name: instructions
                     instr_text = f"{col_name}: {instructions}"
                     instructions_text += instr_text + "\n"
-
-                    print(instr_text)
             except Exception as e:
                 instructions_text = None
 

@@ -28,37 +28,27 @@ def update_value(key):
 st.title("Transform Data")
 
 # **Added Step-by-Step Instructions Expander**
-with st.expander("📖 How to Use This App", expanded=False):
+with st.expander("How to Use This App", icon=":material/help_outline:", expanded=False):
     st.markdown("""
-### Step-by-Step Guide
-
-1. **Upload Your File**
-   - Click on the **"Start by uploading your CSV or Excel file"** button.
-   - Supported formats: `.csv`, `.xlsx`.
+1. **Upload Your File (CSV or Excel)**
 
 2. **View Original Data**
-   - Once uploaded, the original data will be displayed for your reference.
+   - Once uploaded, the original data will be displayed for your reference
 
 3. **Configure Transformations**
-   - In the **"Start with TableTalk"** section, enter your **Anthropic API Key**.
-   - Add new columns by clicking the **"Add New Column"** button.
+   - Enter your **Anthropic API Key** that you can get from [console.anthropic.com](https://console.anthropic.com/)
+   - Ensure you have enough credits in your Anthropic account
+   - Add new columns by clicking the **"Add New Column"** button
    - For each new column:
-     - **Name**: Specify the name of the new column.
-     - **Instructions**: Provide instructions for transforming the data (e.g., calculations or data manipulations).
-     - **Type**: Select the data type (`text` or `number`).
+     - **Name**: Specify the name of the new column
+     - **Instructions**: Provide instructions for transforming the data
+     - **Type**: Select the data type (text or number)
 
 4. **Apply Transformations**
-   - After configuring all desired columns, click on the **"Apply Transformations"** button.
-   - The app will process your data and provide a **Batch ID** for tracking.
+   - After configuring all desired columns, click on the **"Apply Transformations"** button
+   - The app will process your data and provide a **Batch ID** for tracking in the status page
 
-5. **Download Configuration**
-   - You can download your current configuration for future use.
-   - To reuse a configuration, upload the previously saved JSON file.
-
-6. **Estimate Cost**
-   - An estimated cost for the transformation will be displayed based on your configurations.
-
-**Note**: Ensure that all required fields are filled out and a valid API key is provided before applying transformations.
+**Note**: *The results might take up to 24 hours to be ready and might not be accurate. LLMs can make mistakes.*
 
 """)
 
@@ -251,8 +241,10 @@ if uploaded_file is not None:
                 # Display the result as a table - the result is a row of the dataframe (a pandas row)
                 # Display the instructions
                 if result is not None:
-                    st.dataframe(result.head(1), height=50)
+                    st.markdown("**Instructions**")
                     st.text(instructions)
+                    st.markdown("**Test Result**")
+                    st.dataframe(result.head(1), height=50)
                 else:
                     st.error("Error running test transformation")
             except Exception as e:
@@ -278,7 +270,7 @@ if uploaded_file is not None:
                     "Please save these details to check your transformation status. If lost, you won't be able to check the status and retrieve the transformed data:\n\n"
                     f"**API Key**: {st.session_state.get('api_key')}\n\n"
                     f"**Batch ID**: {batch_id}\n\n"
-                    "*Note*: Processing can take up to 24 hours."
+                    "**Note**: *Processing can take up to 24 hours.*"
                 )
 
                 # Add a button to download a json file with the API key and Batch ID ({"api_key": dummy_api_key, "batch_id": dummy_batch_id})
