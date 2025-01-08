@@ -127,7 +127,8 @@ if uploaded_file is not None:
                         key=f"name_{i}",
                         on_change=update_value,
                         args=(f"name_{i}",),
-                        help="This is the name of the new column in the transformed data."
+                        help="This is the name of the new column in the transformed data.",
+                        placeholder="New column name"
                     )
 
                     # radio for column type
