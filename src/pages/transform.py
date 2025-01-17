@@ -73,7 +73,7 @@ if uploaded_file is not None:
     if df is not None:
         # Display original data
         st.subheader("Original Data")
-        st.dataframe(df, height=200)
+        st.dataframe(df.head(100), height=200)
 
         # Show available columns into pills st.pills https://docs.streamlit.io/develop/api-reference/widgets/st.pills
         available_columns = df.columns.tolist()
