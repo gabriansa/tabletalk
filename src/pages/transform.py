@@ -59,23 +59,31 @@ uploaded_file = st.file_uploader("Start by uploading your CSV or Excel file", ty
 
 st.divider()
 
-if uploaded_file is not None:
-    # Load the data
+@st.cache_data
+def load_dataframe(file):
+    """Load and cache dataframe from uploaded file"""
     try:
-        if uploaded_file.name.endswith('.csv'):
-            df = pd.read_csv(uploaded_file)
+        if file.name.endswith('.csv'):
+            return pd.read_csv(file)
         else:
-            df = pd.read_excel(uploaded_file)
+            return pd.read_excel(file)
     except Exception as e:
-        df = None
         st.error(f"Error processing file. Please check your input and try again. Error: {str(e)}")
+        return None
+
+if uploaded_file is not None:
+    # Load the data using cached function
+    df = load_dataframe(uploaded_file)
         
     if df is not None:
+        # Display data info
+        st.info(f"📊 Loaded dataset with {len(df):,} rows and {len(df.columns):,} columns")
+        
         # Display original data
         st.subheader("Original Data (first 20 rows)")
         st.dataframe(df.head(20), height=200)
 
-        # Show available columns into pills st.pills https://docs.streamlit.io/develop/api-reference/widgets/st.pills
+        # Show available columns
         available_columns = df.columns.tolist()
         st.pills("Columns in dataset", available_columns, disabled=True)
 
