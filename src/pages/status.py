@@ -49,23 +49,26 @@ check_status_button = st.button(
 )
 
 if check_status_button:
-    done, df, batch = check_batch_status(batch_id, api_key)
+    try:
+        done, df, batch = check_batch_status(batch_id, api_key)
 
-    if not done:
-        st.warning("Batch not done yet. Check back later (it can take up to 24 hours for a batch to complete)")
-    elif done and df is None:
-        st.warning("Batch failed. Check the API key and batch ID.")
-    elif done and df is not None:
-        st.info("Batch completed successfully. Here are the results:")
-        st.dataframe(df)
-        # Add a button to download the dataframe as a CSV
-        st.download_button(
-            "Download CSV",
-            df.to_csv(index=False),
-            "data.csv",
-            "text/csv",
-            key="download-csv"
-        )
+        if not done:
+            st.info(f"Status: **{batch.status}**. Check back later (it can take up to 24 hours for a batch to complete)", icon=":material/info:")
+        elif done and df is not None:
+            st.info("Batch completed successfully. Here are the results:")
+            st.dataframe(df)
+            # Add a button to download the dataframe as a CSV
+            st.download_button(
+                "Download CSV",
+                df.to_csv(index=False),
+                "data.csv",
+                "text/csv",
+                key="download-csv"
+            )
 
-    # Show the batch response
-    st.write(batch)
+        # Show the batch response in a collapsible section
+        with st.expander("Show raw batch response", expanded=False):
+            st.write(batch)
+
+    except Exception as e:
+        st.error(f"Error retrieving batch status. Check that the API key and batch ID are correct.")
