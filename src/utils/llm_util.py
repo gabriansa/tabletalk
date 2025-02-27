@@ -138,7 +138,6 @@ def check_batch_status(batch_id, api_key):
     client = OpenAI(api_key=api_key)
     batch = client.batches.retrieve(batch_id=batch_id)
     
-    print(batch)
 
     if batch.status == 'completed' and batch.output_file_id is not None:
         # Download the output file
@@ -168,9 +167,9 @@ def check_batch_status(batch_id, api_key):
         
         # Convert results to DataFrame
         results_df = pd.DataFrame(list(data.values()))
-        return True, results_df
+        return True, results_df, batch
     else:
-        return False, None
+        return False, None, batch
     
 def apply_test_transformation(df, field_descriptions, api_key, model):
     """Apply the transformation to a random row from the dataset"""

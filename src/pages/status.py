@@ -49,7 +49,7 @@ check_status_button = st.button(
 )
 
 if check_status_button:
-    done, df = check_batch_status(batch_id, api_key)
+    done, df, batch = check_batch_status(batch_id, api_key)
 
     if not done:
         st.warning("Batch not done yet. Check back later (it can take up to 24 hours for a batch to complete)")
@@ -66,3 +66,6 @@ if check_status_button:
             "text/csv",
             key="download-csv"
         )
+
+    # Show the batch response
+    st.write(batch)
