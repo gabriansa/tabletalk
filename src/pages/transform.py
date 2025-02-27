@@ -78,7 +78,12 @@ def validate_api_key(api_key):
 def load_dataframe(file):
     """Load and cache dataframe from uploaded file"""
     try:
-            return pd.read_csv(file)
+        df = pd.read_csv(file)
+        original_rows = len(df)
+        if original_rows > 50000:
+            df = df.head(50000)
+            st.warning(f"⚠️ Dataset has been trimmed from {original_rows:,} to 50,000 rows due to size limitations.")
+        return df
     except Exception as e:
         st.error(f"Error processing file. Please check your input and try again. Error: {str(e)}")
         return None
