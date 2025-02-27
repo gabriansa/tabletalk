@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 import json
-from src.utils.llm_util import apply_transformation, apply_test_transformation, estimate_cost
-import anthropic
+from src.utils.llm_util import apply_transformation, apply_test_transformation
+from openai import OpenAI
+import tiktoken
 
 class Field:
     def __init__(self, name, instructions, field_type):
@@ -24,20 +25,78 @@ def update_value(key):
     elif input_type == "type":
         st.session_state.new_columns[index].field_type = st.session_state[key]
 
+def count_tokens(text, model):
+    """Count the number of tokens in a text string"""
+    encoding = tiktoken.encoding_for_model(model)
+    return len(encoding.encode(text))
+
+def estimate_cost(df, field_descriptions):
+    """Estimate the cost of running transformations on the dataset"""
+    # Load the instruction template
+    with open('instructions.txt', 'r') as f:
+        prompt_template = f.read()
+    
+    # Create a sample prompt with field descriptions
+    sample_prompt = prompt_template.replace('{{FIELD_DESCRIPTIONS}}', json.dumps(field_descriptions, indent=2))
+    
+    # Count tokens in the prompt
+    input_tokens_per_row = count_tokens(sample_prompt, st.secrets["MODEL"])
+    output_tokens_per_row = 100  # Assuming average output is around 100 tokens
+    
+    # Calculate total tokens
+    total_rows = len(df)
+    total_input_tokens = input_tokens_per_row * total_rows
+    total_output_tokens = output_tokens_per_row * total_rows
+    
+    # Calculate cost using provided rates
+    input_cost_per_million = 0.15  # $0.15 per million tokens
+    output_cost_per_million = 0.60  # $0.60 per million tokens
+    
+    total_input_cost = (total_input_tokens / 1_000_000) * input_cost_per_million
+    total_output_cost = (total_output_tokens / 1_000_000) * output_cost_per_million
+    total_cost = total_input_cost + total_output_cost
+    
+    return {
+        'input_tokens_per_row': input_tokens_per_row,
+        'output_tokens_per_row': output_tokens_per_row,
+        'total_rows': total_rows,
+        'total_input_tokens': total_input_tokens,
+        'total_output_tokens': total_output_tokens,
+        'total_cost': total_cost
+    }
+
+def validate_api_key(api_key):
+    """Validate OpenAI API key"""
+    try:
+        client = OpenAI(api_key=api_key)
+        client.models.list()
+        return True
+    except Exception:
+        return False
+
+@st.cache_data
+def load_dataframe(file):
+    """Load and cache dataframe from uploaded file"""
+    try:
+            return pd.read_csv(file)
+    except Exception as e:
+        st.error(f"Error processing file. Please check your input and try again. Error: {str(e)}")
+        return None
+    
 # Main app layout
 st.title("Transform Data")
 
 # **Added Step-by-Step Instructions Expander**
 with st.expander("How to Use This App", icon=":material/help_outline:", expanded=False):
     st.markdown("""
-1. **Upload Your File (CSV or Excel)**
+1. **Upload Your File (CSV only)**
 
 2. **View Original Data**
    - Once uploaded, the original data will be displayed for your reference
 
 3. **Configure Transformations**
-   - Enter your **Anthropic API Key** that you can get from [console.anthropic.com](https://console.anthropic.com/)
-   - Ensure you have enough credits in your Anthropic account
+   - Enter your **OpenAI API Key** that you can get from [platform.openai.com](https://platform.openai.com/)
+   - Ensure you have enough credits in your OpenAI account
    - Add new columns by clicking the **"Add New Column"** button
    - For each new column:
      - **Name**: Specify the name of the new column
@@ -55,21 +114,9 @@ with st.expander("How to Use This App", icon=":material/help_outline:", expanded
 st.divider()
 
 # File upload
-uploaded_file = st.file_uploader("Start by uploading your CSV or Excel file", type=['csv', 'xlsx'])
+uploaded_file = st.file_uploader("Start by uploading your CSV file", type=['csv'])
 
 st.divider()
-
-@st.cache_data
-def load_dataframe(file):
-    """Load and cache dataframe from uploaded file"""
-    try:
-        if file.name.endswith('.csv'):
-            return pd.read_csv(file)
-        else:
-            return pd.read_excel(file)
-    except Exception as e:
-        st.error(f"Error processing file. Please check your input and try again. Error: {str(e)}")
-        return None
 
 if uploaded_file is not None:
     # Load the data using cached function
@@ -86,8 +133,7 @@ if uploaded_file is not None:
         # Show available columns
         available_columns = df.columns.tolist()
         st.pills("Columns in dataset", available_columns, disabled=True)
-
-        
+     
         st.divider()
         st.subheader("Start with TableTalk")
 
@@ -96,28 +142,24 @@ if uploaded_file is not None:
 
         with col1:
             api_key = st.text_input(
-                "Enter your Anthropic API Key - [Get API Key](https://console.anthropic.com/)",
+                "Enter your OpenAI API Key - [Get API Key](https://platform.openai.com/api-keys)",
                 type="password",
-                help="""This application uses Anthropic's LLMs to transform your data. 
-                You'll need an Anthropic API key. To get one, go to [console.anthropic.com](https://console.anthropic.com/)
+                help="""This application uses gpt-4o-mini to transform the data. 
+                You'll need an OpenAI API key. To get one, go to [platform.openai.com](https://platform.openai.com/)
                 and create an account. Then, navigate to API Keys section and create a new API key.
                 """
             )
+            st.session_state["api_key"] = None
 
         with col2:
             if api_key:
-                try:
-                    client = anthropic.Anthropic(api_key=api_key)
-                    client.models.list()
+                if validate_api_key(api_key):
                     st.markdown("<div style='margin-top: 34px;'></div>", unsafe_allow_html=True)
                     st.write(":material/check_circle: Valid!")
-                    
-                except Exception:
+                    st.session_state["api_key"] = api_key
+                else:
                     st.markdown("<div style='margin-top: 34px;'></div>", unsafe_allow_html=True)
                     st.write(":material/error: Not valid!")
-                    
-        if api_key:
-            st.session_state["api_key"] = api_key
 
         # Display columns in expanders
         if "new_columns" not in st.session_state:
@@ -187,14 +229,7 @@ if uploaded_file is not None:
         col1, col2, _ = st.columns([1, 1, 1])
         with col1:
             # Check if API key is valid
-            api_key_valid = False
-            if api_key:
-                try:
-                    client = anthropic.Anthropic(api_key=api_key)
-                    client.models.list()
-                    api_key_valid = True
-                except Exception:
-                    api_key_valid = False
+            api_key_valid = validate_api_key(st.session_state.get('api_key'))
 
             apply_transformations_button = st.button(
                 "Apply Transformations", 
@@ -209,14 +244,14 @@ if uploaded_file is not None:
 
         with col2:
             test_button = st.button(
-                "Test Single Row (Free)",
+                "Test Single Row",
                 type="primary",
                 icon=":material/bolt:",
                 help="Test the transformations",
                 disabled=not st.session_state.new_columns or not all(
                     col.name and col.instructions 
                     for col in st.session_state.new_columns
-                )
+                ) or not api_key_valid
             )
 
         # Estimate cost (moved outside columns)
@@ -229,8 +264,10 @@ if uploaded_file is not None:
                 }
                 for col in st.session_state.new_columns
             ]
-            estimated_cost = estimate_cost(df, field_descriptions)
-            st.text(f"Estimated cost: ${estimated_cost:.2f}")
+            cost_estimate = estimate_cost(df, field_descriptions)
+            
+            # Display cost estimation details
+            st.subheader(f"Cost Estimation ${cost_estimate['total_cost']:.2f}")
 
         if test_button:
             try:
@@ -245,7 +282,7 @@ if uploaded_file is not None:
                 ]
 
                 # Apply test transformation
-                result, instructions = apply_test_transformation(df, field_descriptions, st.secrets["GROQ_API_KEY"])
+                result, instructions = apply_test_transformation(df, field_descriptions, st.session_state.get('api_key'), st.secrets["MODEL"])
 
                 # Display the result as a table - the result is a row of the dataframe (a pandas row)
                 # Display the instructions
@@ -272,7 +309,7 @@ if uploaded_file is not None:
                 ]
 
                 # Apply transformations
-                batch_id = apply_transformation(st.session_state.get('api_key'), df, field_descriptions)
+                batch_id = apply_transformation(st.session_state.get('api_key'), df, field_descriptions, st.secrets["MODEL"])
 
                 # Display the API key and Batch ID
                 st.info(
@@ -313,23 +350,40 @@ if uploaded_file is not None:
                 mime="application/json",
                 help="Download current configuration"
             )
+
+            # Initialize the processed_file_hash in session state if it doesn't exist
+            if 'processed_file_hash' not in st.session_state:
+                st.session_state.processed_file_hash = None
+
             config_file = st.file_uploader(
                 "Upload Configuration",
                 type=['json'],
                 help="Upload a previously saved configuration",
                 key="config_uploader"
             )
+            
             if config_file is not None:
-                try:
-                    config_data = json.load(config_file)
-                    st.session_state.new_columns = [
-                        Field(
-                            col["name"],
-                            col["instructions"],
-                            col["field_type"]
-                        )
-                        for col in config_data["columns"]
-                    ]
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error loading configuration: {str(e)}")
+                # Get the current file contents
+                current_file_contents = config_file.getvalue()
+                # Create a simple hash of the file contents
+                current_hash = hash(current_file_contents)
+                
+                # Only process if we haven't seen this exact file before
+                if current_hash != st.session_state.processed_file_hash:
+                    try:
+                        # Reset file pointer to start
+                        config_file.seek(0)
+                        config_data = json.load(config_file)
+                        st.session_state.new_columns = [
+                            Field(
+                                col["name"],
+                                col["instructions"],
+                                col["field_type"]
+                            )
+                            for col in config_data["columns"]
+                        ]
+                        # Store the hash of the processed file
+                        st.session_state.processed_file_hash = current_hash
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error loading configuration: {str(e)}")

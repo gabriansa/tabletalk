@@ -20,3 +20,7 @@ ENV/
 
 # Keys
 keys.txt
+
+# Files
+prompt_electric.txt
+prompt_gas.txt

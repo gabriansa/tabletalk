@@ -51,6 +51,6 @@ def render_sidebar():
     )
     
     # Add support email link at the fixed bottom position
-    st.sidebar.markdown('<div class="support-link" style="text-align: center;">Need help? <a href="mailto:hey.tabletalk@gmail.com">Contact Us</a></div>', unsafe_allow_html=True)
+    st.sidebar.markdown(f'<div class="support-link" style="text-align: center;">Need help? <a href="mailto:{st.secrets.SUPPORT_EMAIL}">Contact Us</a></div>', unsafe_allow_html=True)
         
     return pg

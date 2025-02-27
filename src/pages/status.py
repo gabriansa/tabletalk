@@ -1,6 +1,17 @@
 import streamlit as st
-import anthropic
 from src.utils.llm_util import check_batch_status
+from openai import OpenAI
+
+
+def validate_api_key(api_key):
+    """Validate OpenAI API key"""
+    try:
+        client = OpenAI(api_key=api_key)
+        client.models.list()
+        return True
+    except Exception:
+        return False
+
 
 st.title("Check Status")
 
@@ -15,15 +26,13 @@ with col1:
 
 with col2:
     if api_key:
-        try:
-            client = anthropic.Anthropic(api_key=api_key)
-            client.models.list()
+        if validate_api_key(api_key):
             st.markdown("<div style='margin-top: 34px;'></div>", unsafe_allow_html=True)
             st.write(":material/check_circle: Valid!")
-            
-        except Exception:
+        else:
             st.markdown("<div style='margin-top: 34px;'></div>", unsafe_allow_html=True)
             st.write(":material/error: Not valid!")
+        
 
 # Add API key validation
 batch_id = st.text_input(
