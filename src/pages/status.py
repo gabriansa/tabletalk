@@ -55,20 +55,54 @@ if check_status_button:
         if not done:
             st.info(f"Status: **{batch.status}**. Check back later (it can take up to 24 hours for a batch to complete)", icon=":material/info:")
         elif done and df is not None:
-            st.info("Batch completed successfully. Here are the results:")
-            st.dataframe(df)
-            # Add a button to download the dataframe as a CSV
+            # Calculate the percentage of non-null values for each column
+            non_null_percentages = df.count() / len(df) * 100
+            
+            # Separate columns with high completion rate (e.g., >80%) from hallucinated ones
+            # Exclude row_number from the percentage calculation
+            columns_to_check = [col for col in df.columns if col != 'row_number']
+            main_columns = [col for col in columns_to_check if non_null_percentages[col] > 80]
+            hallucinated_columns = [col for col in columns_to_check if non_null_percentages[col] <= 80]
+            
+            # Always include row_number in main_df
+            main_df = df[['row_number'] + main_columns]
+
+            st.info("Batch completed successfully!", icon=":material/check_circle:")
+
+            st.divider()
+            with st.expander("Show main results", expanded=False):
+                st.dataframe(main_df)
+            
+            # Download button for main results
             st.download_button(
-                "Download CSV",
-                df.to_csv(index=False),
-                "data.csv",
+                "Download Main Results CSV",
+                main_df.to_csv(index=False),
+                "main_results.csv",
                 "text/csv",
-                key="download-csv"
+                key="download-main-csv"
             )
+            st.divider()
+
+            # Show hallucinated fields if they exist
+            st.warning("The following results may contain hallucinated fields (columns with sparse data):")
+            with st.expander("Show hallucinated results", expanded=False):  
+                st.dataframe(df)
+            
+            # Download button for hallucinated results
+            st.download_button(
+                "Download Hallucinated Results CSV",
+                df.to_csv(index=False),
+                "hallucinated_results.csv",
+                "text/csv",
+                key="download-hallucinated-csv"
+            )
+            st.divider()
 
         # Show the batch response in a collapsible section
         with st.expander("Show raw batch response", expanded=False):
             st.write(batch)
 
+
     except Exception as e:
         st.error(f"Error retrieving batch status. Check that the API key and batch ID are correct.")
+        st.write(e)
