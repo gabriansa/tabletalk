@@ -149,7 +149,7 @@ if uploaded_file is not None:
             api_key = st.text_input(
                 "Enter your OpenAI API Key - [Get API Key](https://platform.openai.com/api-keys)",
                 type="password",
-                help="""This application uses gpt-4o-mini to transform the data. 
+                help="""This application uses some of the latest models from OpenAI to transform the data. 
                 You'll need an OpenAI API key. To get one, go to [platform.openai.com](https://platform.openai.com/)
                 and create an account. Then, navigate to API Keys section and create a new API key.
                 """
